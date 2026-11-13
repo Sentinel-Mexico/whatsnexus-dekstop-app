@@ -563,6 +563,30 @@ webview {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
+.network-fields {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(0, 2fr);
+  align-items: center;
+  gap: 12px 18px;
+  padding: 18px 0;
+}
+
+.network-fields label { color: var(--text-secondary); font-weight: 500; }
+.network-fields input, .network-fields select {
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font: inherit;
+}
+.network-fields input:focus, .network-fields select:focus { outline: 2px solid var(--bg-active); }
+.network-fields input:disabled, .network-fields select:disabled { opacity: .5; }
+.network-actions { display: flex; align-items: center; gap: 14px; padding-top: 18px; }
+#network-status { color: var(--text-secondary); font-size: .84rem; }
+@media (max-width: 650px) { .network-fields { grid-template-columns: 1fr; } }
+
 .setting-text {
   display: flex;
   flex-direction: column;

@@ -133,6 +133,7 @@ function createWindow() {
   mainWindow.webContents.on('did-attach-webview', (event, wc) => {
     if (wc && wc.session) {
       configureSession(wc.session);
+      wc.setWebRTCIPHandlingPolicy(currentSystemSettings.network.webrtcShield ? 'disable_non_proxied_udp' : 'default');
     }
     if (wc) {
       wc.setWindowOpenHandler(({ url }) => {
@@ -594,7 +595,8 @@ ipcMain.handle('check-internet', async (event, customUrl) => {
 // System Configuration (Downloads and Spellchecker)
 let currentSystemSettings = {
   downloadPath: '',
-  spellcheckLanguages: ['es-ES']
+  spellcheckLanguages: ['es-ES'],
+  network: { enabled: false, type: 'socks5', host: '', port: '', strict: true, webrtcShield: false }
 };
 
 function getSystemSettingsFilePath() {
@@ -652,6 +654,10 @@ function loadSavedSystemSettings() {
       }
       if (data.downloadPath) {
         currentSystemSettings.downloadPath = data.downloadPath;
+      }
+      if (data.network && typeof data.network === 'object') {
+        const loadedNetwork = { ...currentSystemSettings.network, ...data.network };
+        if (validNetworkSettings(loadedNetwork)) currentSystemSettings.network = loadedNetwork;
       }
     }
   } catch (_) {}
@@ -733,6 +739,35 @@ function removeDictionariesForLanguages(removedLangs) {
 
 const activeSessions = new Set();
 
+function validNetworkSettings(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (typeof value.enabled !== 'boolean' || !['socks5', 'system'].includes(value.type) ||
+      typeof value.strict !== 'boolean' || typeof value.webrtcShield !== 'boolean') return false;
+  if (!value.enabled || value.type === 'system') return true;
+  return typeof value.host === 'string' && /^(?!.*[\s/:@])[a-zA-Z0-9.\-[\]]{1,253}$/.test(value.host) &&
+    Number.isInteger(Number(value.port)) && Number(value.port) >= 1 && Number(value.port) <= 65535;
+}
+
+async function applyNetworkSettings(ses) {
+  const network = currentSystemSettings.network;
+  const config = !network.enabled ? { mode: 'system' } : network.type === 'system' ?
+    { mode: 'system' } : {
+      mode: 'fixed_servers',
+      proxyRules: `socks5://${network.host}:${network.port}`,
+      proxyBypassRules: network.strict ? '<-loopback>' : ''
+    };
+  await ses.setProxy(config);
+  await ses.closeAllConnections();
+}
+
+function applyWebRTCShield() {
+  for (const contents of webContents.getAllWebContents()) {
+    if (contents.getType() === 'webview' && !contents.isDestroyed()) {
+      contents.setWebRTCIPHandlingPolicy(currentSystemSettings.network.webrtcShield ? 'disable_non_proxied_udp' : 'default');
+    }
+  }
+}
+
 function applySpellChecker(ses, languages) {
   if (!ses) return;
   const langs = Array.isArray(languages) ? languages : [languages || 'es-ES'];
@@ -750,6 +785,8 @@ function updateSpellCheckerAllSessions(languages) {
     applySpellChecker(ses, languages);
   }
 }
+
+const reservedDownloadPaths = new Set();
 
 // Intercept session downloads to save them to user-selected path
 function configureSessionDownloads(ses) {
@@ -769,7 +806,16 @@ function configureSessionDownloads(ses) {
       } catch (err) {
         console.error('[will-download Error]: No se pudo asegurar la ruta de descargas:', err);
       }
-      const targetFile = path.join(rutaGuardada, item.getFilename());
+      const original = path.basename(item.getFilename());
+      const extension = path.extname(original);
+      const stem = path.basename(original, extension);
+      let targetFile = path.join(rutaGuardada, original);
+      let suffix = 1;
+      while (fs.existsSync(targetFile) || reservedDownloadPaths.has(targetFile)) {
+        targetFile = path.join(rutaGuardada, `${stem} (${suffix++})${extension}`);
+      }
+      reservedDownloadPaths.add(targetFile);
+      item.once('done', () => reservedDownloadPaths.delete(targetFile));
       console.log('Descargando en:', rutaGuardada);
       item.setSavePath(targetFile);
     }
@@ -898,8 +944,32 @@ ipcMain.handle('get-system-settings', () => {
   return {
     downloadPath: currentSystemSettings.downloadPath || app.getPath('downloads'),
     spellcheckLanguages: currentSystemSettings.spellcheckLanguages || ['es-ES'],
-    spellcheckLanguage: (currentSystemSettings.spellcheckLanguages && currentSystemSettings.spellcheckLanguages[0]) || 'es-ES'
+    spellcheckLanguage: (currentSystemSettings.spellcheckLanguages && currentSystemSettings.spellcheckLanguages[0]) || 'es-ES',
+    network: currentSystemSettings.network
   };
+});
+
+ipcMain.handle('set-network-settings', async (_event, network) => {
+  if (!validNetworkSettings(network)) return false;
+  const previous = currentSystemSettings.network;
+  currentSystemSettings.network = {
+    enabled: network.enabled,
+    type: network.type,
+    host: typeof network.host === 'string' ? network.host.trim() : '',
+    port: network.port || '',
+    strict: network.strict,
+    webrtcShield: network.webrtcShield
+  };
+  try {
+    await Promise.all([...activeSessions].map(applyNetworkSettings));
+    applyWebRTCShield();
+    saveSystemSettings();
+    return true;
+  } catch (error) {
+    currentSystemSettings.network = previous;
+    await Promise.allSettled([...activeSessions].map(applyNetworkSettings));
+    return false;
+  }
 });
 
 ipcMain.handle('set-spellchecker-languages', (event, languages) => {
@@ -1439,6 +1509,7 @@ function configureSession(ses) {
   configureSessionPermissions(ses);
   configureSessionDownloads(ses);
   applySpellChecker(ses, currentSystemSettings.spellcheckLanguages || ['es-ES']);
+  applyNetworkSettings(ses).catch(error => log.error('[Network settings]', error));
 }
 
 app.whenReady().then(() => {

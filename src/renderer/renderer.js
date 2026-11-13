@@ -707,6 +707,66 @@ const permScreenAudioToggle = document.getElementById('perm-screen-audio-toggle'
 const downloadPathInput = document.getElementById('download-path-input');
 const btnSelectDownloadDir = document.getElementById('btn-select-download-dir');
 const btnResetDownloadDir = document.getElementById('btn-reset-download-dir');
+const networkProxyToggle = document.getElementById('network-proxy-toggle');
+const networkProxyType = document.getElementById('network-proxy-type');
+const networkProxyHost = document.getElementById('network-proxy-host');
+const networkProxyPort = document.getElementById('network-proxy-port');
+const networkStrictToggle = document.getElementById('network-strict-toggle');
+const networkWebRTCToggle = document.getElementById('network-webrtc-toggle');
+const networkResetBtn = document.getElementById('network-reset-btn');
+
+function refreshNetworkFields() {
+  const socks5 = networkProxyToggle.checked && networkProxyType.value === 'socks5';
+  networkProxyType.disabled = !networkProxyToggle.checked;
+  networkProxyHost.disabled = !socks5;
+  networkProxyPort.disabled = !socks5;
+  networkStrictToggle.disabled = !socks5;
+  networkProxyHost.required = socks5;
+  networkProxyPort.required = socks5;
+}
+
+function readNetworkFields() {
+  return {
+    enabled: networkProxyToggle.checked,
+    type: networkProxyType.value,
+    host: networkProxyHost.value.trim(),
+    port: networkProxyPort.value,
+    strict: networkStrictToggle.checked,
+    webrtcShield: networkWebRTCToggle.checked
+  };
+}
+
+async function saveNetworkFields() {
+  refreshNetworkFields();
+  if (!networkProxyHost.checkValidity()) return networkProxyHost.reportValidity();
+  if (!networkProxyPort.checkValidity()) return networkProxyPort.reportValidity();
+  if (electronAPI.setNetworkSettings) await electronAPI.setNetworkSettings(readNetworkFields());
+}
+
+async function initNetworkFields() {
+  if (!electronAPI.getSystemSettings) return;
+  const system = await electronAPI.getSystemSettings();
+  const network = system.network || {};
+  networkProxyToggle.checked = !!network.enabled;
+  networkProxyType.value = network.type === 'system' ? 'system' : 'socks5';
+  networkProxyHost.value = network.host || '';
+  networkProxyPort.value = network.port || '';
+  networkStrictToggle.checked = network.strict !== false;
+  networkWebRTCToggle.checked = !!network.webrtcShield;
+  refreshNetworkFields();
+}
+
+for (const field of [networkProxyToggle, networkProxyType, networkProxyHost, networkProxyPort, networkStrictToggle, networkWebRTCToggle]) {
+  field.addEventListener('change', saveNetworkFields);
+}
+networkResetBtn.addEventListener('click', async () => {
+  networkProxyToggle.checked = false;
+  networkProxyType.value = 'socks5';
+  networkProxyHost.value = '';
+  networkProxyPort.value = '';
+  networkStrictToggle.checked = true;
+  await saveNetworkFields();
+});
 
 // Unread messages tracking per account for System Tray
 const accountUnreadCounts = {};
@@ -2244,6 +2304,9 @@ tabBtns.forEach(btn => {
     if (panel) panel.classList.add('active');
     if (btn.dataset.tab === 'tab-permissions') {
       initDownloadPathUI();
+    }
+    if (btn.dataset.tab === 'tab-network') {
+      initNetworkFields().catch(console.error);
     }
     if (btn.dataset.tab === 'tab-customization') {
       populateCustomizationInputs();

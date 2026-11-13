@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('default-downloads-path', handler);
   },
   getSystemSettings: () => ipcRenderer.invoke('get-system-settings'),
+  setNetworkSettings: (network) => ipcRenderer.invoke('set-network-settings', network),
   setSpellcheckerLanguage: (lang) => ipcRenderer.invoke('set-spellchecker-languages', Array.isArray(lang) ? lang : [lang]),
   setSpellcheckerLanguages: (langs) => ipcRenderer.invoke('set-spellchecker-languages', Array.isArray(langs) ? langs : [langs]),
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),

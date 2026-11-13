@@ -1,6 +1,6 @@
 {
   "name": "whatsnexus",
-  "version": "2.3.3",
+  "version": "2.4.0",
   "description": "Multi-account WhatsApp Web client using Electron",
   "main": "src/main.js",
   "scripts": {

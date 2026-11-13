@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.4.0] - 2026-11-12
+
+### Releases & Features
+- **Summary:** Add SOCKS5 proxy and WebRTC privacy settings; preserve files with duplicate download names
+### Recent Commits
+- v.2.3.3 docs: synchronize stable changelog for production release promotion (b8272c9)
+- v.2.3.3 fix: resolve 7 security vulnerabilities across project dependencies (3ab9a77)
+- v2.3.2 docs: consolidate changelog.md to single release milestone between 2.2.8 and 2.3.2 (e2eaa51)
+- v2.3.2 docs: audit documentation and synchronize stable release changelog for v2.3.2 release promotion (9d1d14f)
+- v2.3.2: perf: deep hardware resource optimization, tab throttling, and adaptive network polling (0131415)
+
 ## [2.3.3] - 2026-10-24
 ### Security
 - **Comprehensive Vulnerability Remediation & Hardening:**

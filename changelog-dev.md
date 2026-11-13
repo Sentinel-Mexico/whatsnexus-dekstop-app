@@ -2,6 +2,17 @@
 
 This changelog records all granular updates, bug fixes, refactorings, and feature iterations developed on the `Dev` branch. Each version bump in `package.json` is documented here as it happens.
 
+## [2.4.0] - 2026-11-12
+
+### Active Iteration & Deliverables
+- **Summary:** Add SOCKS5 proxy and WebRTC privacy settings; preserve files with duplicate download names
+### Recent Commits
+- feat: add network privacy settings and unique download names (2b0f085)
+- v.2.3.3 docs: synchronize stable changelog for production release promotion (b8272c9)
+- v.2.3.3 fix: resolve 7 security vulnerabilities across project dependencies (3ab9a77)
+- v2.3.2 docs: consolidate changelog.md to single release milestone between 2.2.8 and 2.3.2 (e2eaa51)
+- v2.3.2 docs: audit documentation and synchronize stable release changelog for v2.3.2 release promotion (9d1d14f)
+
 ## [2.3.3] - 2026-10-24
 ### Security & Fixes
 - **Vulnerability Remediation & Dependency Hardening:**

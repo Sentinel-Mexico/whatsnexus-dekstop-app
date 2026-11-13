@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.5.0] - 2026-11-12
+
+### Releases & Features
+- **Summary:** Match proxy selector styling and add HTTP, HTTPS, and SOCKS4 methods
+### Recent Commits
+- merge: promote proxy methods from Dev to main (9ca3c7b)
+- feat: add themed proxy selector and more proxy protocols (aeb9cb8)
+- docs: synchronize production changelog for 2.4.1 (d6d992c)
+- fix: avoid Linux runner APT downgrades during cross build (b585e4e)
+- docs: synchronize development changelog for 2.4.0 (f4ce925)
+
 ## [2.4.1] - 2026-11-12
 
 ### Releases & Features

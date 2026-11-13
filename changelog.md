@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [2.4.1] - 2026-11-12
+
+### Releases & Features
+- **Summary:** Fix Linux cross-compiler dependency installation without adding a foreign APT architecture
+### Recent Commits
+- fix: avoid Linux runner APT downgrades during cross build (b585e4e)
+- docs: synchronize development changelog for 2.4.0 (f4ce925)
+- feat: add network privacy settings and unique download names (2b0f085)
+- v.2.3.3 docs: synchronize stable changelog for production release promotion (b8272c9)
+- v.2.3.3 fix: resolve 7 security vulnerabilities across project dependencies (3ab9a77)
+
 ## [2.4.0] - 2026-11-12
 
 ### Releases & Features

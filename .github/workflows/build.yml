@@ -29,28 +29,9 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      # En Ubuntu 24.04 aislamos deb822 y apuntamos arm64 estrictamente a ports.ubuntu.com
       - name: Dependencias de compilación para Linux
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sudo dpkg --add-architecture arm64
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i 's/Architectures: .*/Architectures: amd64/g' /etc/apt/sources.list.d/ubuntu.sources || true
-            if ! grep -q "Architectures:" /etc/apt/sources.list.d/ubuntu.sources; then
-              sudo sed -i '/Suites:/i Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
-            fi
-          fi
-          if [ -f /etc/apt/sources.list ]; then
-            sudo sed -i 's/deb http/deb [arch=amd64] http/g' /etc/apt/sources.list || true
-          fi
-          
-          sudo tee /etc/apt/sources.list.d/arm64-ports.list << 'EOF'
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble-backports main restricted universe multiverse
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
-          EOF
-
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libarchive-tools zstd
           sudo snap install snapcraft --classic || true

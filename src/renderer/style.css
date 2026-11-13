@@ -572,7 +572,7 @@ webview {
 }
 
 .network-fields label { color: var(--text-secondary); font-weight: 500; }
-.network-fields input, .network-fields select {
+.network-fields input {
   min-width: 0;
   padding: 11px 13px;
   border: 1px solid var(--border-color);
@@ -581,8 +581,11 @@ webview {
   color: var(--text-primary);
   font: inherit;
 }
-.network-fields input:focus, .network-fields select:focus { outline: 2px solid var(--bg-active); }
-.network-fields input:disabled, .network-fields select:disabled { opacity: .5; }
+.network-fields input:focus { outline: 2px solid var(--bg-active); }
+.network-fields input:disabled { opacity: .5; }
+.network-fields .custom-select-wrapper { max-width: none; min-width: 0; }
+.network-fields .custom-select-trigger { box-sizing: border-box; }
+.network-fields .custom-select-trigger.disabled { opacity: .5; cursor: not-allowed; }
 .network-actions { display: flex; align-items: center; gap: 14px; padding-top: 18px; }
 #network-status { color: var(--text-secondary); font-size: .84rem; }
 @media (max-width: 650px) { .network-fields { grid-template-columns: 1fr; } }

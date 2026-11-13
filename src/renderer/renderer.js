@@ -335,6 +335,9 @@ function initCustomDropdown(selectId, options = {}) {
       const item = document.createElement('div');
       item.className = 'custom-option' + (opt.value === currentVal ? ' selected' : '');
       item.dataset.value = opt.value;
+      item.tabIndex = -1;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', String(opt.value === currentVal));
 
       if (typeof renderOptionCallback === 'function') {
         renderOptionCallback(opt, item);
@@ -350,11 +353,34 @@ function initCustomDropdown(selectId, options = {}) {
         } else {
           label.innerText = opt.innerText;
         }
-        optionsContainer.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
+        optionsContainer.querySelectorAll('.custom-option').forEach(el => {
+          el.classList.remove('selected');
+          el.setAttribute('aria-selected', 'false');
+        });
         item.classList.add('selected');
+        item.setAttribute('aria-selected', 'true');
         optionsContainer.classList.remove('open');
         trigger.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
         select.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          item.click();
+          trigger.focus();
+        } else if (e.key === 'Escape') {
+          optionsContainer.classList.remove('open');
+          trigger.classList.remove('open');
+          trigger.setAttribute('aria-expanded', 'false');
+          trigger.focus();
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const items = Array.from(list.querySelectorAll('.custom-option'));
+          const next = (items.indexOf(item) + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+          items[next].focus();
+        }
       });
 
       list.appendChild(item);
@@ -378,25 +404,43 @@ function initCustomDropdown(selectId, options = {}) {
     trigger.dataset.dropdownBound = 'true';
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (select.disabled) return;
       // Cerrar cualquier otro dropdown abierto
       document.querySelectorAll('.custom-select-options.open').forEach(el => {
         if (el !== optionsContainer) el.classList.remove('open');
       });
       document.querySelectorAll('.custom-select-trigger.open').forEach(el => {
-        if (el !== trigger) el.classList.remove('open');
+        if (el !== trigger) {
+          el.classList.remove('open');
+          el.setAttribute('aria-expanded', 'false');
+        }
       });
 
       const isOpen = optionsContainer.classList.contains('open');
       if (isOpen) {
         optionsContainer.classList.remove('open');
         trigger.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
       } else {
         optionsContainer.classList.add('open');
         trigger.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
         const selected = optionsContainer.querySelector('.custom-option.selected');
         if (selected) {
           selected.scrollIntoView({ block: 'nearest' });
         }
+      }
+    });
+    trigger.addEventListener('keydown', (e) => {
+      if (select.disabled) return;
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!optionsContainer.classList.contains('open')) trigger.click();
+        optionsContainer.querySelector('.custom-option.selected, .custom-option')?.focus();
+      } else if (e.key === 'Escape') {
+        optionsContainer.classList.remove('open');
+        trigger.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
       }
     });
   }
@@ -709,6 +753,7 @@ const btnSelectDownloadDir = document.getElementById('btn-select-download-dir');
 const btnResetDownloadDir = document.getElementById('btn-reset-download-dir');
 const networkProxyToggle = document.getElementById('network-proxy-toggle');
 const networkProxyType = document.getElementById('network-proxy-type');
+const networkProxyTypeTrigger = document.getElementById('network-proxy-type-trigger');
 const networkProxyHost = document.getElementById('network-proxy-host');
 const networkProxyPort = document.getElementById('network-proxy-port');
 const networkStrictToggle = document.getElementById('network-strict-toggle');
@@ -716,13 +761,16 @@ const networkWebRTCToggle = document.getElementById('network-webrtc-toggle');
 const networkResetBtn = document.getElementById('network-reset-btn');
 
 function refreshNetworkFields() {
-  const socks5 = networkProxyToggle.checked && networkProxyType.value === 'socks5';
+  const explicitProxy = networkProxyToggle.checked && networkProxyType.value !== 'system';
   networkProxyType.disabled = !networkProxyToggle.checked;
-  networkProxyHost.disabled = !socks5;
-  networkProxyPort.disabled = !socks5;
-  networkStrictToggle.disabled = !socks5;
-  networkProxyHost.required = socks5;
-  networkProxyPort.required = socks5;
+  networkProxyTypeTrigger.classList.toggle('disabled', networkProxyType.disabled);
+  networkProxyTypeTrigger.setAttribute('aria-disabled', String(networkProxyType.disabled));
+  networkProxyTypeTrigger.tabIndex = networkProxyType.disabled ? -1 : 0;
+  networkProxyHost.disabled = !explicitProxy;
+  networkProxyPort.disabled = !explicitProxy;
+  networkStrictToggle.disabled = !explicitProxy;
+  networkProxyHost.required = explicitProxy;
+  networkProxyPort.required = explicitProxy;
 }
 
 function readNetworkFields() {
@@ -748,11 +796,12 @@ async function initNetworkFields() {
   const system = await electronAPI.getSystemSettings();
   const network = system.network || {};
   networkProxyToggle.checked = !!network.enabled;
-  networkProxyType.value = network.type === 'system' ? 'system' : 'socks5';
+  networkProxyType.value = ['socks5', 'socks4', 'http', 'https', 'system'].includes(network.type) ? network.type : 'socks5';
   networkProxyHost.value = network.host || '';
   networkProxyPort.value = network.port || '';
   networkStrictToggle.checked = network.strict !== false;
   networkWebRTCToggle.checked = !!network.webrtcShield;
+  refreshCustomDropdown('network-proxy-type');
   refreshNetworkFields();
 }
 
@@ -2682,11 +2731,15 @@ initCustomDropdown('palette-select');
 initCustomDropdown('theme-select');
 initCustomDropdown('tray-style-select');
 initCustomDropdown('privacy-preset-select');
+initCustomDropdown('network-proxy-type');
 initCustomDropdown('language-select', { renderOption: renderLanguageOption });
 
 document.addEventListener('click', () => {
   document.querySelectorAll('.custom-select-options.open').forEach(el => el.classList.remove('open'));
-  document.querySelectorAll('.custom-select-trigger.open').forEach(el => el.classList.remove('open'));
+  document.querySelectorAll('.custom-select-trigger.open').forEach(el => {
+    el.classList.remove('open');
+    el.setAttribute('aria-expanded', 'false');
+  });
 });
 
 // Manejo de Plantillas de Privacidad (Amplio, Medio, Estricto, Personalizado)

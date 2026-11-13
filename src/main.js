@@ -741,7 +741,7 @@ const activeSessions = new Set();
 
 function validNetworkSettings(value) {
   if (!value || typeof value !== 'object') return false;
-  if (typeof value.enabled !== 'boolean' || !['socks5', 'system'].includes(value.type) ||
+  if (typeof value.enabled !== 'boolean' || !['socks5', 'socks4', 'http', 'https', 'system'].includes(value.type) ||
       typeof value.strict !== 'boolean' || typeof value.webrtcShield !== 'boolean') return false;
   if (!value.enabled || value.type === 'system') return true;
   return typeof value.host === 'string' && /^(?!.*[\s/:@])[a-zA-Z0-9.\-[\]]{1,253}$/.test(value.host) &&
@@ -753,7 +753,7 @@ async function applyNetworkSettings(ses) {
   const config = !network.enabled ? { mode: 'system' } : network.type === 'system' ?
     { mode: 'system' } : {
       mode: 'fixed_servers',
-      proxyRules: `socks5://${network.host}:${network.port}`,
+      proxyRules: `${network.type}://${network.host}:${network.port}`,
       proxyBypassRules: network.strict ? '<-loopback>' : ''
     };
   await ses.setProxy(config);

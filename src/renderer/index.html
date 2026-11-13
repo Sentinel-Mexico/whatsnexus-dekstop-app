@@ -482,10 +482,20 @@
                 </div>
                 <div class="network-fields">
                   <label for="network-proxy-type" data-i18n="network_proxy_type_title"></label>
-                  <select id="network-proxy-type">
-                    <option value="socks5">SOCKS5</option>
-                    <option value="system" data-i18n="proxy_type_system"></option>
-                  </select>
+                  <div class="custom-select-wrapper" id="custom-network-proxy-type-wrapper">
+                    <div class="custom-select-trigger" id="network-proxy-type-trigger" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false" data-i18n-aria="network_proxy_type_title">
+                      <span id="network-proxy-type-label" data-i18n="proxy_type_socks5"></span>
+                      <i class="fa-solid fa-chevron-down select-chevron"></i>
+                    </div>
+                    <div class="custom-select-options dropdown-menu" id="network-proxy-type-options" role="listbox"></div>
+                    <select id="network-proxy-type" class="styled-select" style="display: none;">
+                      <option value="socks5" data-i18n="proxy_type_socks5"></option>
+                      <option value="socks4" data-i18n="proxy_type_socks4"></option>
+                      <option value="http" data-i18n="proxy_type_http"></option>
+                      <option value="https" data-i18n="proxy_type_https"></option>
+                      <option value="system" data-i18n="proxy_type_system"></option>
+                    </select>
+                  </div>
                   <label for="network-proxy-host" data-i18n="proxy_host_label"></label>
                   <input id="network-proxy-host" type="text" autocomplete="off" spellcheck="false">
                   <label for="network-proxy-port" data-i18n="proxy_port_label"></label>
